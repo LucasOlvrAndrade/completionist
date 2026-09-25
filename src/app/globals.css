@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* Tokens do front-end spec (seção 6). Escuro é o padrão; o claro vale quando o
+   usuário escolhe (data-theme="light") ou quando o sistema pede e ele nunca escolheu. */
+:root {
+  color-scheme: dark;
+  --bg: #0e1116;
+  --surface: #161b22;
+  --surface-2: #1f2630;
+  --border: #3a4452;
+  --border-strong: #6b7686;
+  --text: #e6eaf0;
+  --text-muted: #9aa4b2;
+  --accent: #c9d3de;
+  --on-accent: #0e1116;
+  --accent-dlc: #7f8fa3;
+  --track: #2a323d;
+  --success: #4cc38a;
+  --warning: #f0b429;
+  --error: #f2777a;
+  --info: #5aa9f0;
+  --rarity-common: #a7b0bc;
+  --rarity-uncommon: #5cc48a;
+  --rarity-rare: #5aa9f0;
+  --rarity-very-rare: #b38cf5;
+  --rarity-ultra-rare: #f0b85a;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f4;
+  --border: #d5dae0;
+  --border-strong: #7d8794;
+  --text: #151a21;
+  --text-muted: #56606d;
+  --accent: #4b5a6b;
+  --on-accent: #ffffff;
+  --accent-dlc: #8e9bab;
+  --track: #e3e7ec;
+  --success: #1e7a48;
+  --warning: #8a5a00;
+  --error: #c0392b;
+  --info: #1f63b0;
+  --rarity-common: #5b6573;
+  --rarity-uncommon: #1e7a48;
+  --rarity-rare: #1f63b0;
+  --rarity-very-rare: #7442c8;
+  --rarity-ultra-rare: #8f5a00;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #eef1f4;
+    --border: #d5dae0;
+    --border-strong: #7d8794;
+    --text: #151a21;
+    --text-muted: #56606d;
+    --accent: #4b5a6b;
+    --on-accent: #ffffff;
+    --accent-dlc: #8e9bab;
+    --track: #e3e7ec;
+    --success: #1e7a48;
+    --warning: #8a5a00;
+    --error: #c0392b;
+    --info: #1f63b0;
+    --rarity-common: #5b6573;
+    --rarity-uncommon: #1e7a48;
+    --rarity-rare: #1f63b0;
+    --rarity-very-rare: #7442c8;
+    --rarity-ultra-rare: #8f5a00;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-dlc: var(--accent-dlc);
+  --color-track: var(--track);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --color-rarity-common: var(--rarity-common);
+  --color-rarity-uncommon: var(--rarity-uncommon);
+  --color-rarity-rare: var(--rarity-rare);
+  --color-rarity-very-rare: var(--rarity-very-rare);
+  --color-rarity-ultra-rare: var(--rarity-ultra-rare);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --radius-card: 8px;
+  --radius-button: 6px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "Metadata": {
+    "title": "Completionist",
+    "description": "Guias de platina para jogos da Steam: conquistas da mais fácil para a mais difícil, com passo a passo, vídeos e o seu progresso."
+  },
+  "Header": {
+    "skip": "Pular para o conteúdo",
+    "home": "Completionist, página inicial",
+    "language": "Idioma",
+    "switchTo": "Ver em {language}"
+  },
+  "Home": {
+    "title": "Platine seus jogos da Steam, da conquista mais fácil à mais difícil.",
+    "tagline": "Passo a passo, vídeos no trecho certo e o seu progresso pela conta Steam. Em breve.",
+    "status": "O site está em construção. Os primeiros guias chegam com o Hollow Knight."
+  },
+  "Footer": {
+    "valve": "O Completionist não tem vínculo com a Valve Corporation. Steam e os logotipos da Steam são marcas da Valve Corporation.",
+    "poweredBy": "Powered by Steam",
+    "licenses": "Código sob licença MIT. Guias sob licença CC BY-NC-SA 4.0.",
+    "repository": "Código no GitHub",
+    "theme": "Tema",
+    "themeSystem": "Sistema",
+    "themeDark": "Escuro",
+    "themeLight": "Claro"
+  },
+  "NotFound": {
+    "title": "Página não encontrada",
+    "back": "Voltar para o início"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "Metadata": {
+    "title": "Completionist",
+    "description": "Platinum guides for Steam games: achievements from easiest to hardest, with step-by-step guides, videos and your progress."
+  },
+  "Header": {
+    "skip": "Skip to content",
+    "home": "Completionist, home page",
+    "language": "Language",
+    "switchTo": "View in {language}"
+  },
+  "Home": {
+    "title": "Platinum your Steam games, from the easiest achievement to the hardest.",
+    "tagline": "Step-by-step guides, videos at the right moment and your progress from your Steam account. Coming soon.",
+    "status": "The site is under construction. The first guides arrive with Hollow Knight."
+  },
+  "Footer": {
+    "valve": "Completionist is not affiliated with Valve Corporation. Steam and the Steam logo are trademarks of Valve Corporation.",
+    "poweredBy": "Powered by Steam",
+    "licenses": "Code under the MIT license. Guides under CC BY-NC-SA 4.0.",
+    "repository": "Code on GitHub",
+    "theme": "Theme",
+    "themeSystem": "System",
+    "themeDark": "Dark",
+    "themeLight": "Light"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "back": "Back to the home page"
+  }
+}
