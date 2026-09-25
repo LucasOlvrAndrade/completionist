@@ -64,3 +64,4 @@ Proximo: tarefas manuais do Lucas p/ Story 1.1 (tabela no PRD) + @sm cria storie
 - Story 1.1: Ready for Review; falta so a 10.4 (teclado/contraste conferidos pelo Lucas no navegador).
 - Proximo: @qa na 1.1; depois 1.2 (precisa da chave da Steam Web API e da integracao Neon).
 - 2026-09-25: STEAM_API_KEY cadastrada na Vercel (production/preview/development, Config) a partir de arquivo local temporario, ja apagado; valor nunca passou pelo chat nem pelo git. Testada: GetSchemaForGame 367520 -> 63 conquistas em PT. Chega ao .env.local via vercel env pull.
+- 2026-09-25: Neon criado pelo Marketplace (recurso completionist-db, store_ObbUeSXU05DsSnmB, plano Free, regiao iad1, ligado a production/preview/development). Postgres 18.6 (arquitetura dizia 17): CI e dev local usam postgres:18. A CLI instalou agent skills do Neon (.agents/, .claude/skills/, skills-lock.json) sem pedir; removidos, nao versionar.
