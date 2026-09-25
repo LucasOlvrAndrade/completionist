@@ -18,7 +18,7 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
 });
 const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
+  subsets: ['latin', 'latin-ext'],
   weight: ['400'],
   variable: '--font-jetbrains-mono',
   display: 'swap',

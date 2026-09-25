@@ -6,8 +6,7 @@
   "Header": {
     "skip": "Pular para o conteúdo",
     "home": "Completionist, página inicial",
-    "language": "Idioma",
-    "switchTo": "Ver em {language}"
+    "language": "Idioma"
   },
   "Home": {
     "title": "Platine seus jogos da Steam, da conquista mais fácil à mais difícil.",

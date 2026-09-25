@@ -1084,7 +1084,7 @@ Oculta sem descrição na Steam: o cartão mostra "Conquista oculta" como descri
 - Renderização estática: `generateStaticParams` com os dois idiomas no layout e
   `setRequestLocale(locale)` em layouts e páginas (ou `next/root-params`, disponível a partir
   do Next 16.3, conforme a doc do next-intl).
-- Primeira visita: o proxy lê `Accept-Language` e grava o cookie `NEXT_LOCALE`; o seletor de
+- Primeira visita: o proxy lê `Accept-Language` e redireciona (o next-intl 4 só grava o cookie `NEXT_LOCALE` quando o idioma muda pelo seletor, e aí o cookie vence o navegador); o seletor de
   idioma troca a rota e o cookie.
 - Caminhos traduzidos com `pathnames` do next-intl (PRD 1.1, FR26): a pasta interna é
   `app/[locale]/jogo/[appid]`, e o mapa publica `/pt/jogo/{appid}` e `/en/game/{appid}`,

@@ -1,0 +1,83 @@
+schema: 1
+story: '1.1'
+story_title: 'Projeto no ar'
+gate: CONCERNS
+status_reason: 'Lint, typecheck, 18 testes, build e CI verdes; produção conferida (redirecionamento por idioma, caminhos traduzidos, 404 traduzido, cabeçalhos, assets). Falta a verificação manual 10.4 e há dois pontos de acessibilidade no seletor de idioma.'
+reviewer: 'Quinn'
+reviewed_revision: 'commit:3ff1c0d'
+updated: '2026-09-25T15:20:00Z'
+
+top_issues:
+  - id: 'A11Y-001'
+    severity: medium
+    finding: 'Botões PT/EN com aria-label "Ver em ..." que não contém o texto visível (WCAG 2.5.3); lang="en" no botão lê a parte em português com voz em inglês.'
+    suggested_action: 'Incluir o texto visível no nome acessível e mover o lang para um span com o nome do idioma.'
+    suggested_owner: '@dev'
+  - id: 'A11Y-002'
+    severity: medium
+    finding: 'Seletor de idioma (~28 px) e select de tema abaixo dos 44 x 44 px de alvo de toque no celular (front-end spec 7.2).'
+    suggested_action: 'Altura e largura mínimas de 44 px nesses controles no celular.'
+    suggested_owner: '@dev'
+  - id: 'TEST-001'
+    severity: medium
+    finding: 'Task 10.4 pendente: navegação por teclado nos dois idiomas e contraste dos dois temas (PRD 4, NFR9).'
+    suggested_action: 'Lucas confere à mão e marca a 10.4; só então a story vai para Done.'
+    suggested_owner: 'Lucas'
+  - id: 'SEC-001'
+    severity: low
+    finding: "CSP com script-src 'unsafe-inline' (decisão G1 para manter SSG/ISR)."
+    suggested_action: '@architect valida a G1; reavaliar hash do script de tema quando houver conteúdo de usuário.'
+    suggested_owner: '@architect'
+  - id: 'I18N-001'
+    severity: low
+    finding: 'Primeira visita a / não grava NEXT_LOCALE (next-intl 4 só grava quando o idioma difere do navegador ou na troca); Task 5.3 diz que grava.'
+    suggested_action: 'Ajustar o texto da Task 5.3 e da arquitetura 12.1.'
+    suggested_owner: '@sm'
+  - id: 'ROUTE-001'
+    severity: low
+    finding: 'Matcher do proxy exclui caminhos com ponto e que começam com "api" (ex.: /u/joao.silva).'
+    suggested_action: 'Na story do apelido, proibir ponto ou restringir a exclusão a extensões de arquivo e a api/.'
+    suggested_owner: '@dev'
+  - id: 'DEP-001'
+    severity: low
+    finding: 'ESLint 9.39 em vez de 10.x (registrado); @types/node com ^; JetBrains Mono sem latin-ext.'
+    suggested_action: 'Trocar para ~, incluir latin-ext na mono e registrar o ESLint 9 na arquitetura 3.'
+    suggested_owner: '@dev'
+  - id: 'DOC-001'
+    severity: low
+    finding: 'Nota no topo da story ainda diz que a Task 11 está bloqueada.'
+    suggested_action: 'Atualizar ao fechar a story.'
+    suggested_owner: '@po'
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Cabeçalhos da 13.1 mais HSTS em produção; nenhum segredo no repositório nem no histórico; .env* e .vercel ignorados; CI com permissions: contents: read. Ressalva SEC-001 (unsafe-inline)."
+  performance:
+    status: PASS
+    notes: '/pt e /en estáticos (SSG) com cache HIT na Vercel; fontes servidas pelo próprio site com swap.'
+  reliability:
+    status: PASS
+    notes: 'CI verde nas 3 últimas execuções do main; teste de regressão do matcher do proxy.'
+  maintainability:
+    status: PASS
+    notes: 'Textos só em messages/ com teste de igualdade de chaves e sem travessão; versões travadas com ~ (exceto @types/node).'
+  accessibility:
+    status: CONCERNS
+    notes: 'Skip link, foco, lang, rótulos e aria corretos; pendentes A11Y-001, A11Y-002 e a verificação manual 10.4.'
+
+evidence:
+  tests_reviewed: 18
+  commands: ['pnpm lint', 'pnpm typecheck', 'pnpm test', 'CI_BUILD=1 pnpm build', 'gh run list --limit 3', 'curl em https://completionist.lucas-andrade.dev']
+
+recommendations:
+  immediate:
+    - action: 'Corrigir A11Y-001 e A11Y-002 antes da conferência manual'
+      refs: ['src/components/locale-switcher.tsx', 'src/components/theme.tsx']
+    - action: 'Lucas executa a 10.4 e marca a task'
+      refs: ['docs/stories/1.1.projeto-no-ar.story.md']
+  future:
+    - action: 'Resolver os itens de severidade baixa como dívida nas próximas stories'
+      refs: ['next.config.ts', 'src/proxy.ts', 'package.json', 'src/app/[locale]/layout.tsx']
+
+waiver: { active: false }

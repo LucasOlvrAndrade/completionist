@@ -6,8 +6,7 @@
   "Header": {
     "skip": "Skip to content",
     "home": "Completionist, home page",
-    "language": "Language",
-    "switchTo": "View in {language}"
+    "language": "Language"
   },
   "Home": {
     "title": "Platinum your Steam games, from the easiest achievement to the hardest.",

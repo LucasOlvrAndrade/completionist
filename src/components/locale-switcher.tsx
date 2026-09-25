@@ -5,9 +5,9 @@ import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { routing, type Locale } from '@/i18n/routing';
 
-const LABELS: Record<Locale, { short: string; name: string }> = {
-  pt: { short: 'PT', name: 'Português' },
-  en: { short: 'EN', name: 'English' },
+const LABELS: Record<Locale, { short: string; name: string; lang: string }> = {
+  pt: { short: 'PT', name: 'Português', lang: 'pt-BR' },
+  en: { short: 'EN', name: 'English', lang: 'en' },
 };
 
 export function LocaleSwitcher() {
@@ -29,13 +29,16 @@ export function LocaleSwitcher() {
         <button
           key={option}
           type="button"
-          lang={option === 'pt' ? 'pt-BR' : 'en'}
           onClick={() => switchTo(option)}
           aria-current={option === locale ? 'true' : undefined}
-          aria-label={t('switchTo', { language: LABELS[option].name })}
-          className="rounded-[var(--radius-button)] px-2 py-1 font-medium text-text-muted hover:text-text aria-[current]:bg-surface-2 aria-[current]:text-text"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-[var(--radius-button)] px-2 font-medium text-text-muted hover:text-text aria-[current]:bg-surface-2 aria-[current]:text-text"
         >
-          {LABELS[option].short}
+          {/* Nome acessível "PT Português": contém o texto visível (WCAG 2.5.3), e só o
+              nome do idioma é lido na pronúncia dele. */}
+          <span>{LABELS[option].short}</span>
+          <span className="sr-only" lang={LABELS[option].lang}>
+            {` ${LABELS[option].name}`}
+          </span>
         </button>
       ))}
     </nav>

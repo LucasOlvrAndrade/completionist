@@ -45,7 +45,7 @@ export function ThemeSelect() {
       <select
         value={theme}
         onChange={(event) => applyTheme(event.target.value as Theme)}
-        className="rounded-[var(--radius-button)] border border-border-strong bg-surface px-2 py-1 text-text"
+        className="min-h-11 rounded-[var(--radius-button)] border border-border-strong bg-surface px-2 text-text"
       >
         <option value="system">{t('themeSystem')}</option>
         <option value="dark">{t('themeDark')}</option>
