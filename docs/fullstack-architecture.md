@@ -23,6 +23,7 @@ como código; só as práticas (Vercel, Neon, `vercel env pull`, autoria dos com
 | Data | Versão | Descrição | Autor |
 |---|---|---|---|
 | 2026-09-25 | 1.0 | Primeira versão, a partir do PRD 1.0 | @architect |
+| 2026-09-25 | 1.1 | Consistência com o PRD 1.1/1.2 (validação do @po): rota e coluna do "Já mudei", mais rara dos platinados, guia de exemplo, caminhos traduzidos no `revalidatePath` | @po |
 
 ### 1.3 Seções do template que não se aplicam
 
@@ -227,6 +228,7 @@ completionist/
 │   │       ├── me/preferences/route.ts
 │   │       ├── me/progress/[appid]/route.ts   # GET progresso, POST atualizar
 │   │       ├── me/library/route.ts            # GET página, POST avançar/atualizar
+│   │       ├── me/privacy-check/route.ts      # POST "Já mudei, atualizar" (1/min)
 │   │       ├── me/profile/route.ts            # PUT ligar/apelido, DELETE desligar
 │   │       ├── visit/[appid]/route.ts         # marca visita recente (cron)
 │   │       └── cron/steam-refresh/route.ts
@@ -356,7 +358,8 @@ CREATE TABLE app_user (
   profile_state       text NOT NULL DEFAULT 'unknown'
                       CHECK (profile_state IN ('public','profile_private','games_private','unknown')),
   session_version     integer NOT NULL DEFAULT 1,  -- incrementar invalida sessões
-  library_fetched_at  timestamptz,
+  library_fetched_at  timestamptz,                 -- throttle de 1 h da biblioteca (NFR3)
+  privacy_checked_at  timestamptz,                 -- throttle de 1 min do "Já mudei" (NFR3)
   created_at          timestamptz NOT NULL DEFAULT now(),
   last_login_at       timestamptz NOT NULL DEFAULT now()
 );
@@ -441,7 +444,8 @@ biblioteca de todos os usuários não cabe em 0,5 GB (ver 6.4).
 O apelido é guardado em minúsculas (a normalização é `slug.ts`, que também remove acentos
 e troca espaço por hífen na sugestão vinda do nome Steam). Lista de apelidos reservados no
 código: `admin`, `api`, `conta`, `biblioteca`, `busca`, `jogo`, `sobre`, `privacidade`, `u`,
-`completionist`, `steam`, `valve`. Troca de apelido libera o antigo na hora (sem histórico,
+`account`, `library`, `search`, `game`, `about`, `privacy`, `me`, `completionist`, `steam`,
+`valve`. A regex do banco exige começar por letra ou número (FR23). Troca de apelido libera o antigo na hora (sem histórico,
 fora do escopo do PRD).
 
 ### 6.3 Apagar conta (FR22)
@@ -475,18 +479,18 @@ Cabe com folga no lançamento. Regras de retenção no cron diário:
 
 ### 7.1 Arquivos
 
-O PRD fixa `content/games/{appid}/{pt-BR,en}.md`. Esta arquitetura mantém esses dois
-arquivos e **acrescenta um terceiro**, `guide.yaml`, com tudo o que não depende de idioma
-(nota, dificuldades, etiquetas, vídeos, fotos, fontes, DLC, etapas). Motivo: sem ele, cada
+Cada guia tem três arquivos em `content/games/{appid}/` (PRD 1.1, seção 4 e Story 2.1):
+`guide.yaml`, com tudo o que não depende de idioma (nota, dificuldades, etiquetas, vídeos,
+fotos, fontes, DLC, etapas), e `pt-BR.md` e `en.md`, só com texto. Motivo: sem o YAML, cada
 dificuldade, vídeo e fonte seria escrito duas vezes (137 conquistas no Terraria) e os dois
-arquivos divergiriam. Com ele, os `.md` só têm texto. Isto está listado como mudança na
-Story 2.1 (seção 19).
+arquivos divergiriam.
 
 ### 7.2 `guide.yaml`
 
 ```yaml
 appid: 367520
 revisado_em: 2026-10-10
+exemplo: false            # true só no guia de testes (Story 2.1); fica fora da vitrine em produção
 nota:
   dificuldade: 7          # 1 a 10
   horas: 60               # estimativa para 100%
@@ -578,6 +582,7 @@ const locale = z.enum(['pt-BR', 'en']);
 export const GuideMetaSchema = z.object({
   appid: z.number().int().positive(),
   revisado_em: z.iso.date(),
+  exemplo: z.boolean().default(false),
   nota: z.object({
     dificuldade: z.number().int().min(1).max(10),
     horas: z.number().positive().max(2000),
@@ -643,9 +648,8 @@ flowchart LR
    no frontmatter daquele idioma.
 5. `youtube_id` fora do formato, `fontes` vazia ou não HTTPS, foto apontando para arquivo que
    não existe em `media/`.
-6. Aviso (não falha): conquista do snapshot sem bloco no guia num jogo `completo: true`. Vira
-   falha se o Lucas quiser exigir cobertura total; a Story 2.5 pede cobertura total, então o
-   padrão para `completo: true` é **falhar**.
+6. Num jogo `completo: true`, alguma conquista do snapshot fica sem bloco no guia (Story 2.1,
+   item 4). Em guia sem `completo`, isso é só aviso.
 
 `build-content.ts` converte o Markdown em HTML sanitizado e grava JSON. As páginas importam
 esse JSON, que entra no bundle da função: a revalidação ISR em runtime não depende de ler
@@ -663,6 +667,10 @@ clássico de ISR (`revalidate`, `generateStaticParams`, `revalidatePath`) contin
 Next 16.3 ([ISR](https://nextjs.org/docs/app/guides/incremental-static-regeneration)) e é
 mais simples de prever no plano Hobby. O pessoal vai para o cliente. Reavaliar Cache
 Components depois do lançamento.
+
+As rotas abaixo estão pelo caminho **interno** (pasta em `app/[locale]/`, sempre com o
+segmento em português). O caminho público de cada idioma vem do `pathnames` (12.1): por
+exemplo, `/[locale]/jogo/[appid]` publica `/pt/jogo/{appid}` e `/en/game/{appid}`.
 
 | Rota | Renderização | Cache e invalidação |
 |---|---|---|
@@ -707,7 +715,8 @@ Detalhes da página do jogo:
 | `GET /api/me/progress/[appid]` | sim | Progresso do jogo (busca na Steam se nunca buscou) | 200 `{ status, unlocked: {apiname: unlockedAt}, fetchedAt, nextRefreshAt }` |
 | `POST /api/me/progress/[appid]` | sim | "Atualizar"; respeita 5 min | 200, ou 429 com `Retry-After` e os dados em cache |
 | `GET /api/me/library?cursor=` | sim | Página da biblioteca ordenada | 200 `{ items, nextCursor, pendingRefinement }` |
-| `POST /api/me/library` | sim | Busca a biblioteca na Steam ou refina o próximo lote | 200 |
+| `POST /api/me/library` | sim | Busca a biblioteca na Steam ou refina o próximo lote; a busca completa respeita 1 h (`library_fetched_at`) | 200, ou 429 com `Retry-After` |
+| `POST /api/me/privacy-check` | sim | "Já mudei, atualizar": refaz os passos 1 e 2 de 9.5; 1 vez por minuto (`privacy_checked_at`) | 200 `{ profileState }`, ou 429 com `Retry-After` |
 | `PUT /api/me/profile` | sim | Liga o perfil e define ou troca o apelido | 200, 409 se o apelido existe |
 | `DELETE /api/me/profile` | sim | Desliga o perfil | 204 |
 | `GET /api/search?q=&locale=` | não | Busca de jogos | 200 `{ items: [{appid, name, image, guided}] }` |
@@ -804,10 +813,13 @@ refreshGame(appid, full):
 | Login | `GetPlayerSummaries` + `GetOwnedGames` + progresso em lote | A cada login |
 | Abrir um jogo logado | `GetPlayerAchievements` se nunca buscou esse jogo ou se o último login é mais novo que a última busca | Sob demanda |
 | "Atualizar" no jogo | `GetPlayerAchievements` | No máximo 1 vez a cada 5 min por jogo (NFR3) |
-| "Atualizar" na biblioteca | `GetOwnedGames` + progresso em lote | No máximo 1 vez por hora (proposta, seção 19) |
+| "Atualizar" na biblioteca | `GetOwnedGames` + progresso em lote | No máximo 1 vez por hora (NFR3) |
+| "Já mudei, atualizar" (perfil privado) | `GetPlayerSummaries` + `GetOwnedGames` | No máximo 1 vez por minuto por usuário (NFR3) |
 
-O limite de 5 min é aplicado no servidor com `progress_fetched_at`: dentro da janela, a rota
-devolve os dados em cache com `nextRefreshAt`, e o botão mostra quando pode tentar de novo.
+Os três limites são aplicados no servidor: 5 min por jogo com `user_game.progress_fetched_at`,
+1 h da biblioteca com `app_user.library_fetched_at` e 1 min do "Já mudei" com
+`app_user.privacy_checked_at`. Dentro da janela, a rota devolve os dados em cache com
+`nextRefreshAt` (ou 429 com `Retry-After`), e o botão mostra quando pode tentar de novo.
 
 ### 9.5 Detecção de perfil privado (FR20, Story 3.3)
 
@@ -828,8 +840,10 @@ Regra, em ordem:
 4. 400 `"Requested app has no stats"` → `no_stats`.
 
 `profile_private` e `games_private` mostram o aviso com passo a passo e capturas
-(`public/privacidade/*.webp`) e o botão "Já mudei, atualizar", que refaz os passos 1 e 2
-ignorando o limite de 5 min, mas com limite de 1 vez por minuto por usuário.
+(`public/privacidade/*.webp`) e o botão "Já mudei, atualizar" (`POST /api/me/privacy-check`),
+que refaz os passos 1 e 2 ignorando o limite de 5 min, mas com limite de 1 vez por minuto por
+usuário (`privacy_checked_at`). A lista de jogos do passo 3 vem do `GetOwnedGames` feito no
+login (PRD Story 3.1, item 6), por isso a Story 3.3 não depende da biblioteca (3.4).
 
 ### 9.6 Biblioteca (Story 3.4)
 
@@ -845,7 +859,14 @@ POST /api/me/library (refine), chamado pelo cliente enquanto pendingRefinement:
   5. pega os próximos 15 jogos com 0 < faltando, ordenados pelo score estimado
      para cada um: GetPlayerAchievements (1) + garante % global no cache (0 ou 1)
      calcula score exato, grava rarest_unlocked_apiname e user_achievement
+  6. platinados (faltando = 0) sem rarest_unlocked_apiname: como U = A, a mais rara
+     desbloqueada é a de menor % global do jogo; garante o cache do jogo (0 a 3 chamadas)
+     e grava, sem GetPlayerAchievements
 ```
+
+Jogo acima de 50% ainda não refinado aparece no perfil público sem o ícone da mais rara
+(espaço reservado), até o refino chegar nele; como a ordem do refino é pelo score, esses
+jogos estão entre os primeiros refinados.
 
 Cada chamada de refino cabe folgada em 300 s. O cliente mostra primeiro a lista estimada e vai
 trocando pela exata ("carregamento progressivo", AC 3). Biblioteca de 500 jogos com conquistas:
@@ -878,6 +899,8 @@ de refinamentos completos por dia, e o refino para na faixa de 70% (9.2).
    pula quem já foi atualizado nas últimas 20 h (idempotência)
 4. processa com concorrência 6, até 240 s de relógio ou faixa de orçamento de 70%
 5. revalidatePath('/pt/jogo/{appid}') e ('/en/jogo/{appid}') dos jogos cujo conteúdo mudou
+   (caminho interno, depois do rewrite do next-intl; o público em inglês é /en/game/{appid}.
+   Um teste de integração confere que as duas URLs públicas são invalidadas)
 6. retenção (6.4)
 7. fecha cron_run com totais e o que ficou pendente
 ```
@@ -1022,6 +1045,11 @@ Ordem da biblioteca:
 
 Conquista mais rara desbloqueada (FR24): menor `globalPercent` em `U`; empate por
 `displayOrder`. Nulo não conta; se todas forem nulas, a primeira de `U` por `displayOrder`.
+Nos platinados, `U = A`, então o cálculo não precisa do detalhe do jogador (9.6, passo 6).
+
+Faixas de raridade (FR2, front-end spec 6.4) usam os mesmos limites do `d_eff` de 11.1
+(Comum `p ≥ 50`, Incomum `20 ≤ p < 50`, Rara `5 ≤ p < 20`, Muito rara `1 ≤ p < 5`, Ultra
+rara `p < 1`; nulo é "sem dado"), numa função única `src/domain/rarity.ts`, usada pelas duas.
 
 "Platina" no perfil público (FR24) = `unlocked_count = total_count > 0`. "Mais de 50%" =
 `unlocked_count × 2 > total_count` e não platinado.
@@ -1061,8 +1089,9 @@ Oculta sem descrição na Steam: o cartão mostra "Conquista oculta" como descri
 - Caminhos traduzidos com `pathnames` do next-intl (PRD 1.1, FR26): a pasta interna é
   `app/[locale]/jogo/[appid]`, e o mapa publica `/pt/jogo/{appid}` e `/en/game/{appid}`,
   `/pt/busca` e `/en/search`, `/pt/biblioteca` e `/en/library`, `/pt/conta` e `/en/account`,
-  `/pt/sobre` e `/en/about`, `/pt/privacidade` e `/en/privacy`. O perfil fica `/u/{apelido}`
-  nos dois. Os links usam sempre o `Link` do next-intl, nunca caminhos escritos à mão, e o
+  `/pt/sobre` e `/en/about`, `/pt/privacidade` e `/en/privacy`. O segmento do perfil não é
+  traduzido: `/pt/u/{apelido}` e `/en/u/{apelido}`; `/u/{apelido}` sem idioma é redirecionado
+  pelo proxy, como a raiz. Os links usam sempre o `Link` do next-intl, nunca caminhos escritos à mão, e o
   `hreflang` aponta para o caminho traduzido.
 - Textos da interface em `messages/{pt-BR,en}.json`; o CI confere que as chaves dos dois
   arquivos são iguais.
@@ -1153,7 +1182,7 @@ cada campo; o `correcao.yml` define `jogo`, `conquista`, `idioma` e `descricao`.
 | Vazamento de segredo | `STEAM_API_KEY`, `SESSION_SECRET`, `CRON_SECRET`, `DATABASE_URL` só em variáveis da Vercel; `.env.local` no `.gitignore`; nada com prefixo `NEXT_PUBLIC_` além da URL do site; módulos de servidor com `import 'server-only'`. |
 | Cron chamado por fora | `Authorization: Bearer ${CRON_SECRET}` comparado em tempo constante. |
 | Clickjacking e afins | Cabeçalhos no `next.config.ts`: `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`, `Permissions-Policy` restritivo e CSP com `frame-src https://www.youtube-nocookie.com`, `img-src 'self' https://*.steamstatic.com https://steamcdn-a.akamaihd.net https://i.ytimg.com data:`. |
-| Dados pessoais | Só SteamID, nome, avatar, progresso, preferências e perfil (NFR12); política em `/privacidade`; os termos da Steam pedem informar quais dados são guardados e onde ([termos](https://steamcommunity.com/dev/apiterms)): a página diz que o banco fica nos EUA (Neon `us-east-1`). |
+| Dados pessoais | Só SteamID, nome, avatar, progresso (com horas jogadas e última partida), preferências e perfil (NFR12); política em `/privacidade`; os termos da Steam pedem informar quais dados são guardados e onde ([termos](https://steamcommunity.com/dev/apiterms)): a página diz que o banco fica nos EUA (Neon `us-east-1`). |
 
 ### 13.2 Autorização
 
@@ -1217,10 +1246,13 @@ it('% nula vai para o fim', () => { /* ... */ });
 
 `tests/e2e/visitor.spec.ts` roda contra `next build && next start` no CI, com Postgres de
 serviço semeado a partir das fixtures (`pnpm db:seed:fixtures`) e o guia de exemplo pequeno da
-Story 2.1 (`content/games/_exemplo` fica fora da vitrine em produção por uma flag `exemplo:
-true`). Passos: abre `/pt`, clica no card do jogo de exemplo, confere a nota, acha uma
+Story 2.1 (`content/games/_exemplo`, com `exemplo: true`, um AppID fictício e o snapshot
+`fixtures/steam/schema/{appid}.*.json` escrito à mão). Com `CI_BUILD=1` o guia de exemplo
+entra na vitrine; no build de produção, a flag o tira da vitrine, do `generateStaticParams` e
+do sitemap. Passos: abre `/pt`, clica no card do jogo de exemplo, confere a nota, acha uma
 conquista oculta, confere que o texto real **não** está no DOM visível nem na árvore de
-acessibilidade (`page.getByText` não acha), clica em revelar, confere o texto e o foco.
+acessibilidade (`page.getByText` não acha), clica em revelar, confere o texto e o foco, e
+roda o axe (`@axe-core/playwright`) sem violações WCAG AA (NFR9). Entra na Story 2.4.
 
 ### 14.5 Build no CI
 
@@ -1238,7 +1270,8 @@ páginas sob demanda com o banco semeado.
 
 Comandos: `pnpm dev`, `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`,
 `pnpm test:e2e`, `pnpm content:validate`, `pnpm steam:snapshot <appid>`,
-`pnpm db:generate`, `pnpm db:migrate`.
+`pnpm db:generate`, `pnpm db:migrate`, `pnpm db:seed:fixtures` (semeia o banco com as
+fixtures, para o E2E e o dev sem chave).
 
 ### 15.2 Variáveis de ambiente
 
@@ -1252,6 +1285,11 @@ Comandos: `pnpm dev`, `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`,
 | `CRON_SECRET` | Vercel (Production) | Proteção do cron (16+ caracteres) |
 | `STEAM_DAILY_BUDGET` | Vercel, opcional | Padrão 80000 |
 | `NEXT_PUBLIC_SITE_URL` | Vercel, `.env.local` | `https://completionist.lucas-andrade.dev`; `http://localhost:3000` local |
+| `CI_BUILD` | só no GitHub Actions | `1` faz o build do CI não pré-renderizar jogos e pôr o guia de exemplo na vitrine (14.4, 14.5) |
+
+Ordem de cadastro (PRD, Story 1.1 item 9 e "Ações que só o Lucas faz"): `SESSION_SECRET`,
+`CRON_SECRET` e `NEXT_PUBLIC_SITE_URL` na Story 1.1; `DATABASE_URL`, `DATABASE_URL_UNPOOLED`
+(pela integração Neon) e `STEAM_API_KEY` na Story 1.2.
 
 Preview: usa a mesma `STEAM_API_KEY` (a cota é por chave, e os previews gastam pouco) e um
 branch fixo `preview` do Neon, em vez de um branch por deploy, para não esbarrar no limite de
@@ -1326,6 +1364,8 @@ função por mês (meta abaixo de 700 mil).
 
 ## 19. Mudanças sugeridas no PRD (para o @pm)
 
+Todas incorporadas no PRD 1.1. Mantidas aqui como registro.
+
 1. **Story 2.1 (formato dos guias):** acrescentar `content/games/{appid}/guide.yaml` com os dados
    neutros de idioma; os `.md` ficam só com texto. Acrescentar o snapshot
    `fixtures/steam/schema/{appid}.*.json` gravado pelo `pnpm steam:snapshot` e commitado com o
@@ -1366,7 +1406,7 @@ função por mês (meta abaixo de 700 mil).
 
 ## 20. Checklist
 
-A rodar pelo @po na validação dos artefatos (`po-master-checklist`), junto com o PRD e o
+Rodado pelo @po em 2026-09-25 (`po-master-checklist`), junto com o PRD e o
 `front-end-spec.md`.
 
 ## Fontes consultadas (25/09/2026)

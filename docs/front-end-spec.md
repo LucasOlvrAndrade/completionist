@@ -52,42 +52,45 @@ PRD (FR, NFR ou story). Onde o PRD deixa uma escolha em aberto, a decisão está
 | Data | Versão | Descrição | Autor |
 |---|---|---|---|
 | 2026-09-25 | 1.0 | Primeira versão, a partir do PRD 1.0 | @ux-design-expert |
+| 2026-09-25 | 1.1 | Consistência com o PRD 1.1/1.2 e a arquitetura (validação do @po): caminhos traduzidos, spoiler fora do DOM, limites de atualização, regra do apelido, limites das faixas | @po |
 
 ## 2. Arquitetura de informação
 
 ### 2.1 Mapa do site
 
-Todas as rotas vivem sob `/[locale]`, com `locale` em `pt` ou `en` (FR26). A raiz `/`
-redireciona pelo idioma do navegador (Story 1.1).
+Todas as rotas vivem sob `/pt` ou `/en` (FR26), com os caminhos traduzidos pelo `pathnames`
+do next-intl (arquitetura 12.1). A raiz `/` redireciona pelo idioma do navegador (Story 1.1).
+No código, a pasta interna usa sempre o segmento em português (`app/[locale]/jogo/[appid]`);
+os links usam o `Link` do next-intl, que publica o caminho do idioma.
 
 ```mermaid
 graph TD
-    R["/ (redireciona pelo idioma)"] --> H["/[locale] Home"]
-    H --> B["/[locale]/busca?q= Busca"]
-    H --> J["/[locale]/jogo/[appid] Página do jogo"]
+    R["/ (redireciona pelo idioma)"] --> H["/pt | /en Home"]
+    H --> B["/pt/busca | /en/search ?q= Busca"]
+    H --> J["/pt/jogo/{appid} | /en/game/{appid} Página do jogo"]
     B --> J
-    H --> L["/[locale]/biblioteca Minha biblioteca (login)"]
+    H --> L["/pt/biblioteca | /en/library Minha biblioteca (login)"]
     L --> J
-    H --> C["/[locale]/conta Configurações da conta (login)"]
-    C --> U["/[locale]/u/[apelido] Perfil público"]
+    H --> C["/pt/conta | /en/account Configurações da conta (login)"]
+    C --> U["/pt/u/{apelido} | /en/u/{apelido} Perfil público"]
     U --> J
-    H --> S["/[locale]/sobre Sobre, créditos e licenças"]
-    H --> P["/[locale]/privacidade Privacidade"]
+    H --> S["/pt/sobre | /en/about Sobre, créditos e licenças"]
+    H --> P["/pt/privacidade | /en/privacy Privacidade"]
     J -.estado.-> PV["Aviso de perfil Steam privado"]
     L -.estado.-> PV
-    H --> O["/api/auth/steam (OpenID, sem tela própria)"]
+    H --> O["/api/auth/steam/login e /callback (OpenID, sem tela própria)"]
 ```
 
-| # | Tela (PRD 3) | Rota | Acesso |
-|---|---|---|---|
-| 1 | Home | `/[locale]` | público |
-| 2 | Busca | `/[locale]/busca?q={termo}` | público |
-| 3 | Página do jogo | `/[locale]/jogo/[appid]` | público; mais recursos com login |
-| 4 | Minha biblioteca | `/[locale]/biblioteca` | login (sem login, redireciona para a home com a chamada "Entrar com a Steam") |
-| 5 | Configurações da conta | `/[locale]/conta` | login |
-| 6 | Perfil público | `/[locale]/u/[apelido]` | público; 404 se desligado ou inexistente (FR25) |
-| 7 | Aviso de perfil Steam privado | sem rota própria | estado exibido na página do jogo e na biblioteca |
-| 8 | Sobre, privacidade, créditos e licenças | `/[locale]/sobre` e `/[locale]/privacidade` | público |
+| # | Tela (PRD 3) | Rota PT | Rota EN | Acesso |
+|---|---|---|---|---|
+| 1 | Home | `/pt` | `/en` | público |
+| 2 | Busca | `/pt/busca?q={termo}` | `/en/search?q={termo}` | público |
+| 3 | Página do jogo | `/pt/jogo/{appid}` | `/en/game/{appid}` | público; mais recursos com login |
+| 4 | Minha biblioteca | `/pt/biblioteca` | `/en/library` | login (sem login, redireciona para a home com a chamada "Entrar com a Steam") |
+| 5 | Configurações da conta | `/pt/conta` | `/en/account` | login |
+| 6 | Perfil público | `/pt/u/{apelido}` | `/en/u/{apelido}` | público; 404 se desligado ou inexistente (FR25) |
+| 7 | Aviso de perfil Steam privado | sem rota própria | sem rota própria | estado exibido na página do jogo e na biblioteca |
+| 8 | Sobre, privacidade, créditos e licenças | `/pt/sobre` e `/pt/privacidade` | `/en/about` e `/en/privacy` | público |
 
 **Decisão de UX (tela 7 sem rota):** o aviso aparece exatamente onde o progresso faltou
 (página do jogo ou biblioteca), e o botão "Já mudei, atualizar" recarrega aquele mesmo
@@ -97,9 +100,10 @@ contexto. Uma rota separada tiraria o usuário do lugar onde ele estava.
 licenças (Story 2.4); "Privacidade" fica separada porque é linkada do fluxo de apagar conta
 e precisa de URL estável (NFR12, Story 3.1).
 
-**Decisão de UX (slugs):** as rotas usam os segmentos do PRD (`jogo`, `u`, e em português
-`busca`, `biblioteca`, `conta`, `sobre`, `privacidade`) nos dois idiomas. A tradução dos
-segmentos para `/en` (ex.: `/en/game/`) fica como ponto aberto para o @architect (ver 12.2).
+**Caminhos por idioma (PRD 1.1, FR26):** os segmentos são traduzidos em `/en` (`game`,
+`search`, `library`, `account`, `about`, `privacy`), para o SEO em cada idioma. O segmento
+`u` do perfil é o mesmo nos dois. Parâmetros de busca e de ordem (`?q=`, `?ordem=`) não
+são traduzidos. O seletor de idioma leva para o caminho equivalente do outro idioma.
 
 ### 2.2 Navegação
 
@@ -194,7 +198,8 @@ graph TD
   (Story 3.4, item 3). A ordem final se estabiliza quando o lote termina; até lá, as linhas
   novas entram sem empurrar a linha que tem foco.
 - Nenhum jogo com conquistas: estado vazio explicando e apontando para a vitrine.
-- "Atualizar" clicado antes de 5 minutos: botão desabilitado com "Disponível em 3 min" (NFR3).
+- "Atualizar biblioteca" antes de 1 hora da última atualização: botão desabilitado com
+  "Disponível em 42 min" (NFR3). Na página do jogo, o "Atualizar" segue a janela de 5 minutos (5.3).
 
 **Notas:** após o login, o usuário volta para a página de onde saiu. A biblioteca não é
 aberta automaticamente, para não tirar do contexto quem entrou a partir de um jogo.
@@ -219,9 +224,11 @@ graph TD
     I --> F
 ```
 
-**Casos de borda:** o limite de 5 minutos (NFR3) não se aplica enquanto o perfil está
-privado, porque nenhuma chamada de progresso teve sucesso; se o @architect decidir aplicar,
-o botão mostra a contagem. Não existe marcação manual (FR20): o aviso não oferece essa saída.
+**Casos de borda:** o limite de 5 minutos do "Atualizar" não se aplica ao "Já mudei,
+atualizar"; ele tem limite próprio de uma tentativa por minuto por usuário (NFR3,
+arquitetura 9.5). Dentro do minuto, o botão fica desabilitado com a contagem ("Tente de novo
+em 40 s"). Jogo que o usuário não possui mostra "Você não tem este jogo na biblioteca", sem
+o aviso de privacidade (FR20). Não existe marcação manual (FR20): o aviso não oferece essa saída.
 
 **Notas:** na página do jogo, o aviso aparece de forma compacta acima da lista (a lista
 continua usável como visitante). Na biblioteca, ocupa a área principal, porque sem progresso
@@ -231,7 +238,8 @@ não há o que ordenar.
 
 **Objetivo:** tornar o perfil público com um apelido e compartilhar o link.
 **Entradas:** Configurações da conta.
-**Sucesso:** o perfil responde em `/[locale]/u/[apelido]` e o link aparece pronto para copiar.
+**Sucesso:** o perfil responde em `/pt/u/{apelido}` e `/en/u/{apelido}`, e o link aparece
+pronto para copiar.
 
 ```mermaid
 graph TD
@@ -251,8 +259,11 @@ graph TD
 
 **Casos de borda:**
 
-- Sugestão do nome da Steam com caracteres inválidos: a sugestão chega já normalizada
-  (minúsculas, sem espaço nem acento); o formato exato é definido pelo @architect.
+- Regra do apelido (FR23): 3 a 24 caracteres, só `a-z`, `0-9`, `_` e `-`, começando por
+  letra ou número, fora da lista de reservados (arquitetura 6.2). A regra fica escrita abaixo
+  do campo. A sugestão do nome da Steam chega já normalizada (minúsculas, sem acento, espaço
+  vira hífen); se ficar curta ou vazia, o campo começa vazio.
+- Apelido já usado: "Esse apelido já está em uso" (a API responde 409).
 - Trocar apelido: aviso de que o link antigo deixa de funcionar (FR25).
 - Apagar conta (mesma tela, zona de perigo): confirmação digitando o apelido ou a palavra
   "apagar", com link para a Privacidade (FR22). Confirmações ficam na página, sem `confirm()`.
@@ -492,7 +503,7 @@ Com login, marca de desbloqueada.
 | Visitante | sem marca de desbloqueio | |
 | Bloqueada (logado) | ícone em escala de cinza a 60% de opacidade, texto normal | o texto nunca perde contraste, só o ícone |
 | Desbloqueada (logado) | ícone colorido, marca de check em `success` e "Feita" em texto, borda esquerda de 3 px em `accent` | sempre revelada, mesmo se oculta (FR5) |
-| Oculta embaçada | nome, descrição e passo a passo com blur de 8 px, botão "Revelar spoiler" sobreposto | ver 5.2 |
+| Oculta embaçada | barras genéricas embaçadas no lugar de nome, descrição e passo a passo (o texto real não está na página), botão "Revelar spoiler" sobreposto | ver 5.2 |
 | Oculta revelada | igual ao fechado, com a etiqueta "Oculta" | permanece revelada até recarregar, salvo com o interruptor global ligado |
 | Foco | anel de foco de 2 px em `focus`, afastado 2 px | |
 
@@ -508,10 +519,16 @@ só carrega o iframe `youtube-nocookie` com `start=` no clique (NFR6, NFR8).
 
 **Uso:**
 
-- O conteúdo embaçado recebe `aria-hidden="true"` e `user-select: none`; um `<button>` por
-  cima diz "Conquista oculta. Revelar spoiler" (ou "Etapa com spoiler. Revelar nome").
-- Leitores de tela ouvem o botão, nunca o texto escondido. Ao ativar, o conteúdo perde o
-  `aria-hidden`, o botão sai e o foco vai para o nome revelado.
+- O texto real **não** é borrado com CSS: ele fica dentro de um `<template>` e só entra na
+  página ao revelar (arquitetura 12.4, PRD Story 1.3 item 4). No lugar dele aparecem barras
+  genéricas de tamanho fixo, embaçadas e com `aria-hidden="true"`, que não carregam nada do
+  conteúdo. Assim o spoiler não vaza pelo leitor de tela nem pelo "localizar na página".
+- Um `<button aria-expanded="false">` por cima diz "Conquista oculta. Revelar spoiler" (ou
+  "Etapa com spoiler. Revelar nome").
+- Leitores de tela ouvem o botão, nunca o texto escondido. Ao ativar, o conteúdo do template
+  entra no lugar das barras, o botão sai, o foco vai para o nome revelado e uma região
+  `aria-live="polite"` anuncia "Spoiler revelado".
+- Sem JavaScript, um aviso `<noscript>` explica que revelar spoilers precisa de JavaScript.
 - A % global e o ícone continuam visíveis: não são spoiler e ajudam a decidir se vale revelar.
 - O blur não é a única pista: o texto do botão diz o que está escondido.
 
@@ -637,7 +654,12 @@ visível).
 
 **Conteúdo:** 3 passos numerados com capturas nos dois idiomas, link para a página de
 privacidade da Steam, botão primário "Já mudei, atualizar". Estados do botão: padrão,
-verificando, ainda privado (mensagem ao lado), resolvido (o aviso some).
+verificando, ainda privado (mensagem ao lado), aguardando (desabilitado com "Tente de novo
+em 40 s", limite de uma vez por minuto, NFR3), resolvido (o aviso some).
+
+**Variante "não tem o jogo"** (FR20): na página do jogo, quando a Steam nega o progresso de
+um jogo que não está na biblioteca do usuário, a faixa diz "Você não tem este jogo na
+biblioteca", com fundo `surface` e borda `info`, sem passo a passo nem botão.
 
 ### 5.14 Linha da biblioteca
 
@@ -655,7 +677,8 @@ x/y, barra de progresso. A linha toda é o link.
 
 **Anatomia:** ponto de cor de 8 px + nome da faixa + %. Ex.: "● Muito rara 3,1 %". No
 celular, a faixa pode abreviar ("M. rara"), mas a % nunca some. A % usa formato do idioma
-(3,1 % em PT, 3.1% em EN).
+(3,1 % em PT, 3.1% em EN). Sem % informada pela Steam, o selo mostra "sem dado" em
+`text-muted`, sem ponto de cor.
 
 ### 5.16 Elementos gerais
 
@@ -728,15 +751,17 @@ Faixas pela % global de desbloqueio da Steam (FR2).
 
 | Faixa (PT / EN) | % global | Escuro | Claro |
 |---|---|---|---|
-| Comum / Common | acima de 50% | `#A7B0BC` | `#5B6573` |
-| Incomum / Uncommon | 20% a 50% | `#5CC48A` | `#1E7A48` |
-| Rara / Rare | 5% a 20% | `#5AA9F0` | `#1F63B0` |
-| Muito rara / Very rare | 1% a 5% | `#B38CF5` | `#7442C8` |
-| Ultra rara / Ultra rare | abaixo de 1% | `#F0B85A` | `#8F5A00` |
+| Comum / Common | p ≥ 50% | `#A7B0BC` | `#5B6573` |
+| Incomum / Uncommon | 20% ≤ p < 50% | `#5CC48A` | `#1E7A48` |
+| Rara / Rare | 5% ≤ p < 20% | `#5AA9F0` | `#1F63B0` |
+| Muito rara / Very rare | 1% ≤ p < 5% | `#B38CF5` | `#7442C8` |
+| Ultra rara / Ultra rare | p < 1% | `#F0B85A` | `#8F5A00` |
 
 **Decisão de UX:** cinco faixas, da cor mais fria para a mais quente, com o dourado reservado
-à mais rara (convenção conhecida de jogos). O PRD não fixa os limites; estes são uma proposta
-fácil de mudar num único arquivo de tokens.
+à mais rara (convenção conhecida de jogos). Os limites estão no FR2 do PRD (1.1) e são os
+mesmos da dificuldade estimada pela % na arquitetura (11.1): cada faixa inclui o limite de
+baixo e exclui o de cima, comparando a % com 3 casas decimais. As cores ficam no arquivo de
+tokens; os limites, numa função única em `src/domain/`.
 
 ### 6.5 Contraste verificado (WCAG 2.1)
 
@@ -912,7 +937,8 @@ atualizar). Com `prefers-reduced-motion: reduce`, todas as transições viram tr
 e o esqueleto deixa de pulsar.
 
 - **Abrir/fechar cartão:** altura e opacidade (200 ms, `ease-out`).
-- **Revelar spoiler:** blur de 8 px para 0 (150 ms, `ease-out`).
+- **Revelar spoiler:** as barras embaçadas saem e o conteúdo real entra com opacidade de 0
+  para 1 (150 ms, `ease-out`); o texto real nunca passa pelo estado borrado (5.2).
 - **Barra de progresso ao atualizar:** largura da barra (400 ms, `ease-in-out`), só quando o
   valor muda.
 - **Esqueleto:** pulso de opacidade (1,2 s, `ease-in-out`, repetido).
@@ -963,14 +989,13 @@ aberto; fontes com `display: swap` e só os pesos listados; espaço reservado pa
    sem guia usa cartão, spoiler e interruptor.
 4. Produzir as capturas do aviso de perfil privado nos dois idiomas antes da Story 3.3.
 
-### 12.2 Pontos abertos para o @architect e o @pm
+### 12.2 Pontos que estavam abertos (resolvidos no PRD 1.1)
 
-- Tradução dos segmentos de rota em `/en` (`/en/game/` em vez de `/en/jogo/`): melhor para
-  SEO, mas o PRD fixa `/[locale]/jogo/[appid]` e `/[locale]/u/[apelido]`.
-- Limites das faixas de raridade (6.4) não estão no PRD.
-- Regra de formato do apelido (caracteres e tamanho) e normalização da sugestão da Steam.
-- Se o limite de 5 minutos (NFR3) vale para o "Já mudei, atualizar" do perfil privado.
-- Preferência de tema: o PRD não pede salvar na conta; aqui fica só no navegador.
+- Tradução dos segmentos de rota em `/en`: **adotada** (FR26); ver 2.1.
+- Limites das faixas de raridade: **no FR2**, iguais aos de 6.4.
+- Regra do apelido e normalização da sugestão: **no FR23** e na arquitetura 6.2; ver 3.4.
+- "Já mudei, atualizar": **limite próprio de 1 por minuto** (NFR3), não o de 5 minutos; ver 3.3 e 5.13.
+- Preferência de tema: fica só no navegador; salvar na conta está fora do MVP (PRD 11).
 
 ### 12.3 Checklist de entrega
 
@@ -984,4 +1009,4 @@ aberto; fontes com `display: swap` e só os pesos listados; espaço reservado pa
 ## 13. Resultado do checklist
 
 Não há checklist de UI/UX específico no fluxo para esta fase. A validação dos artefatos fica
-com o @po no `po-master-checklist` (PRD, seção 11).
+com o @po no `po-master-checklist` (PRD, seção 12); resultado em `docs/po-validation.md`.

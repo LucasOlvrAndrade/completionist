@@ -49,6 +49,8 @@ Atencao: Terraria sem nomes PT-BR na Steam (curadoria traduz); Cyberpunk tem 13 
 da DLC paga (bloco proprio). Reserva: Witcher 3, Lies of P, RE4 Remake, Skyrim, Portal 2, Balatro.
 Excluidos: RDR2, GTA V (online), Valheim, Isaac, CS2/Dota/PUBG.
 Dados de "% com 100%" sao teto (conquista mais rara); fontes de 100% bloquearam a pesquisa.
-Resumo confirmado pelo Lucas. PRD escrito (docs/prd.md): 5 epicos, 18 stories + 13 de conteudo.
+Resumo confirmado pelo Lucas. PRD escrito (docs/prd.md): 5 epicos, 15 stories + 13 de conteudo.
 Front-end spec e arquitetura prontos; PRD 1.1 com as 13 mudancas do architect + lacunas do ux (caminhos traduzidos /en/game, faixas de raridade, regras de apelido, limites de refresh).
-Proximo: @po valida os artefatos (po-master-checklist).
+@po: GO com ajustes (95%), 39 achados, 29 corrigidos (docs/po-validation.md). PRD 1.2.
+Pendentes do Lucas: D1 apelido reservado ao desligar perfil, D2 limite inferior das faixas, D3 Lighthouse bloqueia ou so reporta.
+Proximo: tarefas manuais do Lucas p/ Story 1.1 (tabela no PRD) + @sm cria stories do Epico 1.
