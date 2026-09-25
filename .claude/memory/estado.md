@@ -63,3 +63,4 @@ Proximo: tarefas manuais do Lucas p/ Story 1.1 (tabela no PRD) + @sm cria storie
 - ESLint ficou no 9 (o 10 quebra o eslint-plugin-react); desvio registrado na story 1.1.
 - Story 1.1: Ready for Review; falta so a 10.4 (teclado/contraste conferidos pelo Lucas no navegador).
 - Proximo: @qa na 1.1; depois 1.2 (precisa da chave da Steam Web API e da integracao Neon).
+- 2026-09-25: STEAM_API_KEY cadastrada na Vercel (production/preview/development, Config) a partir de arquivo local temporario, ja apagado; valor nunca passou pelo chat nem pelo git. Testada: GetSchemaForGame 367520 -> 63 conquistas em PT. Chega ao .env.local via vercel env pull.
