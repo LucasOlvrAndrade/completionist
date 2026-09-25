@@ -28,6 +28,7 @@ e esse é o espaço inicial; o inglês amplia o alcance.
 | Data | Versão | Descrição | Autor |
 |---|---|---|---|
 | 2026-09-25 | 1.0 | Primeira versão, a partir do brief e do grill-me | @pm |
+| 2026-09-25 | 1.1 | Mudanças sugeridas pelo @architect (seção 19 da arquitetura) e lacunas do @ux (12.2 do front-end spec) | @pm |
 
 ## 2. Requisitos
 
@@ -37,7 +38,9 @@ e esse é o espaço inicial; o inglês amplia o alcance.
 
 - **FR1:** Qualquer jogo da Steam com conquistas pode ser aberto no site, pela busca ou pelo AppID.
 - **FR2:** A página do jogo lista todas as conquistas com ícone, nome, descrição e a % global
-  de desbloqueio, ordenadas da maior % para a menor.
+  de desbloqueio, ordenadas da maior % para a menor. A raridade aparece em cinco faixas
+  (Comum > 50%, Incomum 20 a 50%, Rara 5 a 20%, Muito rara 1 a 5%, Ultra rara < 1%),
+  definidas no front-end spec (6.4).
 - **FR3:** Jogos sem guia mostram o aviso "O guia deste jogo ainda não foi produzido" e
   continuam com a lista ordenada.
 - **FR4:** A home destaca os jogos com guia (vitrine); os demais aparecem só pela busca e pela
@@ -74,11 +77,14 @@ e esse é o espaço inicial; o inglês amplia o alcance.
 
 - **FR17:** "Entrar com a Steam" via OpenID 2.0, sem senha. A conta é identificada pelo SteamID64.
 - **FR18:** Logado, a página do jogo marca as conquistas desbloqueadas e mostra o progresso (x/y).
-- **FR19:** O progresso é buscado na Steam no login e ao clicar "Atualizar", com a data da
-  última atualização visível.
+- **FR19:** No login, o site busca só a lista de jogos e as contagens da biblioteca. O
+  detalhe de cada jogo é buscado na primeira vez que o usuário abre aquele jogo depois do
+  login e ao clicar "Atualizar", com a data da última atualização visível.
 - **FR20:** Se os detalhes de jogos do perfil forem privados, o site mostra um aviso com o
-  passo a passo (com capturas) para torná-los públicos e o botão "Já mudei, atualizar". Não
-  existe marcação manual.
+  passo a passo (com capturas nos dois idiomas) para torná-los públicos e o botão "Já mudei,
+  atualizar". Não existe marcação manual. Como a Steam responde "Profile is not public"
+  também para jogo que o usuário não possui, o site cruza com a lista de jogos e mostra o
+  estado "Você não tem este jogo" quando for o caso.
 - **FR21:** "Minha biblioteca" lista os jogos do usuário que têm conquistas, ordenados por
   proximidade da platina (primeiro quem tem menos conquistas faltando, com peso para a
   dificuldade delas), mostrando o que falta e se o jogo tem guia.
@@ -87,7 +93,9 @@ e esse é o espaço inicial; o inglês amplia o alcance.
 **Perfil público**
 
 - **FR23:** O perfil público nasce desligado. Ao ativar, o usuário escolhe um apelido único
-  (sugestão: o nome da Steam), e o perfil passa a ficar em `/u/{apelido}`.
+  (sugestão: o nome da Steam normalizado), e o perfil passa a ficar em `/u/{apelido}`.
+  Apelido: 3 a 24 caracteres, só `a-z`, `0-9`, `_` e `-`, sempre em minúsculas, fora de uma
+  lista de nomes reservados (`admin`, `api`, `conta`, etc.).
 - **FR24:** O perfil mostra avatar, apelido, platinas feitas e jogos com mais de 50% de
   progresso, cada um com o ícone da conquista mais rara desbloqueada.
 - **FR25:** O usuário pode trocar o apelido e desligar o perfil a qualquer momento; perfil
@@ -96,7 +104,9 @@ e esse é o espaço inicial; o inglês amplia o alcance.
 **Idiomas**
 
 - **FR26:** O site inteiro existe em PT-BR (`/pt`) e em inglês (`/en`), com seletor de idioma.
-  A primeira visita escolhe pelo idioma do navegador.
+  A primeira visita escolhe pelo idioma do navegador. Os caminhos também são traduzidos
+  (`/pt/jogo/…` e `/en/game/…`, `/pt/biblioteca` e `/en/library`, etc.), via `pathnames`
+  do next-intl, para o SEO em cada idioma. O perfil fica em `/u/{apelido}` nos dois.
 - **FR27:** Os dados da Steam (nomes e descrições das conquistas) vêm no idioma do site
   quando o jogo tiver tradução, e em inglês quando não tiver.
 - **FR28:** Todo guia do lançamento existe nos dois idiomas. Guia faltando num idioma mostra
@@ -107,13 +117,21 @@ e esse é o espaço inicial; o inglês amplia o alcance.
 - **NFR1:** Custo zero no plano gratuito da Vercel e do Neon.
 - **NFR2:** Respeitar o limite da Steam Web API (100 mil chamadas/dia): schema e % ficam em
   cache no banco, com atualização diária por cron; um jogo novo é buscado na primeira visita.
-- **NFR3:** Progresso do usuário: no máximo uma atualização por jogo a cada 5 minutos.
+- **NFR3:** Progresso do usuário: no máximo uma atualização por jogo a cada 5 minutos; a
+  biblioteca inteira, no máximo uma vez por hora; o "Já mudei, atualizar" do perfil privado,
+  no máximo uma vez por minuto.
+- **NFR14:** Orçamento diário de 80 mil chamadas à Steam (abaixo do limite de 100 mil). Ao
+  chegar perto, o site degrada com elegância: mostra o que está em cache e avisa que a
+  atualização volta mais tarde.
+- **NFR15:** O banco precisa caber nos 0,5 GB do Neon gratuito: guardar só as conquistas
+  desbloqueadas de cada usuário e aplicar retenção ao cache de jogos pouco visitados.
 - **NFR4:** Texto dos guias 100% próprio; toda conquista com guia cita as fontes. Nada de
   scraping automatizado de sites de guia.
 - **NFR5:** Rodapé com o aviso de que o site não tem vínculo com a Valve e com o crédito
   "Powered by Steam", conforme os termos da Steam Web API.
 - **NFR6:** Vídeos só por embed oficial do YouTube, no modo `youtube-nocookie`.
-- **NFR7:** Segredos (`STEAM_API_KEY`, banco, sessão) fora do git, via `vercel env pull`.
+- **NFR7:** Segredos (`STEAM_API_KEY`, `DATABASE_URL`, `SESSION_SECRET`, `CRON_SECRET`)
+  fora do git, via `vercel env pull`.
 - **NFR8:** Páginas de jogos com guia estáticas ou em cache (ISR), com LCP abaixo de 2,5 s no 4G.
 - **NFR9:** Acessibilidade WCAG AA: contraste, navegação por teclado, o embaçamento de
   spoiler é um botão acessível e não esconde o conteúdo de leitores de tela sem aviso.
@@ -174,9 +192,12 @@ com autor e committer só o Lucas; o Claude aparece só como frase no fim da men
 
 ### Arquitetura
 
-Monólito Next.js (App Router) na Vercel, Postgres no Neon. Guias em Markdown com
-frontmatter em `content/games/{appid}/{pt-BR,en}.md`, lidos na hora do build. O banco
-guarda usuários, progresso, preferências, perfil e o cache da Steam.
+Monólito Next.js 16 (App Router) na Vercel, Postgres no Neon. Cada guia tem
+`content/games/{appid}/guide.yaml` com os dados que não dependem de idioma (dificuldade,
+tempo, etiquetas, etapas, vídeos, fontes) e `{pt-BR,en}.md` só com o texto, lidos na hora
+do build (não são importados para o banco, ao contrário do que o brief sugeria). O banco
+guarda usuários, progresso, preferências, perfil e o cache da Steam. Detalhes em
+`docs/fullstack-architecture.md`.
 
 ### Testes
 
@@ -186,12 +207,17 @@ guarda usuários, progresso, preferências, perfil e o cache da Steam.
   schema da Steam, os dois idiomas presentes.
 - Testes de integração das rotas da Steam com respostas gravadas (fixtures), sem chamar a
   API real no CI.
-- Um teste ponta a ponta do fluxo visitante: home → jogo com guia → revelar spoiler.
+- Um teste ponta a ponta do fluxo visitante: home → jogo com guia → revelar spoiler
+  (entra na Story 2.4, quando as três telas existem).
 
 ### Outras premissas
 
 - Login Steam por OpenID 2.0 implementado à mão (verificação `check_authentication`), com
   sessão em cookie assinado.
+- A lista oficial de apps da Steam (`ISteamApps/GetAppList`) está obsoleta; a busca usa o
+  endpoint `storesearch` da loja, que não é documentado, com fallback para busca por AppID.
+- O carregamento rápido da biblioteca usa `GetAchievementsProgress`, também não
+  documentado, com fallback por jogo.
 - `next-intl` para as rotas `/pt` e `/en`.
 - Cron diário da Vercel para atualizar schema e % dos jogos com guia e dos jogos visitados
   recentemente.
@@ -226,6 +252,10 @@ vá direto para produção.
 4. Página inicial provisória com o nome, o seletor de idioma e o rodapé com o aviso da Valve e as licenças.
 5. Deploy automático do `main` na Vercel, respondendo em `completionist.lucas-andrade.dev`.
 6. Vercel Analytics ativo.
+7. Roteamento de idioma em `proxy.ts` (nome que o Next 16 deu ao antigo `middleware.ts`),
+   com caminhos traduzidos (FR26).
+8. Cabeçalhos de segurança configurados e regra de rate limit no firewall da Vercel.
+9. Segredos da NFR7 cadastrados na Vercel, nenhum no repositório.
 
 ### Story 1.2: Cache da Steam
 
@@ -236,9 +266,13 @@ depender da Steam a cada visita nem estourar o limite da API.
 2. Função que busca `GetSchemaForGame` (nos dois idiomas) e `GetGlobalAchievementPercentagesForApp`
    de um AppID e grava conquistas (apiname, nome e descrição por idioma, ícones, oculta, %).
 3. Um jogo que nunca foi visitado é buscado na primeira visita; os seguintes leem do banco.
-4. Cron diário atualiza os jogos com guia e os visitados nos últimos 30 dias.
-5. Jogo sem conquistas ou AppID inexistente retorna um erro tratado, sem gravar lixo.
-6. Testes com fixtures das respostas da Steam.
+4. O cron diário atualiza as % dos jogos com guia e dos visitados nos últimos 30 dias todo
+   dia, e o schema só quando os apinames mudam ou a cada 7 dias. Tudo cabe em 300 s; o que
+   não couber é retomado no dia seguinte. Cada execução fica registrada (tabela `cron_run`).
+5. Jogo sem conquistas ou AppID inexistente retorna um erro tratado, sem gravar lixo, e fica
+   em cache negativo por 7 dias.
+6. Orçamento diário de chamadas com degradação (NFR14) e retenção do cache (NFR15).
+7. Testes com fixtures das respostas da Steam (as % vêm como texto e são convertidas).
 
 ### Story 1.3: Página do jogo sem guia
 
@@ -248,7 +282,9 @@ difícil, para saber por onde começar.
 1. `/[locale]/jogo/[appid]` mostra capa, nome e a lista das conquistas com ícone, nome, descrição e % global.
 2. Ordem pela % decrescente.
 3. Aviso "O guia deste jogo ainda não foi produzido" (FR3).
-4. Conquistas ocultas embaçadas com clique para revelar (FR5).
+4. Conquistas ocultas embaçadas com clique para revelar (FR5). O texto oculto não fica no
+   DOM visível nem na árvore de acessibilidade até ser revelado; aviso `<noscript>` para
+   quem navega sem JavaScript.
 5. Interruptor global de spoilers no cabeçalho, salvo no navegador (FR6, parte visitante).
 6. Nomes e descrições no idioma do site, com inglês como alternativa (FR27).
 
@@ -257,9 +293,10 @@ difícil, para saber por onde começar.
 Como visitante, quero buscar um jogo pelo nome, para chegar à página dele.
 
 1. Campo de busca no cabeçalho e na home.
-2. Resultados com capa e nome, vindos da busca de apps da Steam, e só jogos com conquistas.
+2. Resultados com capa e nome, vindos do `storesearch` da loja Steam, e só jogos com conquistas.
 3. Jogos com guia aparecem primeiro, com selo.
 4. Busca por AppID numérico abre o jogo direto.
+5. Se a busca da Steam falhar, a página diz isso e oferece a busca por AppID.
 
 ## 7. Épico 2: Guias
 
@@ -271,14 +308,17 @@ com o guia do Hollow Knight publicado nos dois idiomas, que serve de modelo para
 Como curador, quero um formato de guia validado automaticamente, para que um guia com erro
 nunca chegue ao site.
 
-1. Formato documentado em `content/README.md`: frontmatter do jogo (nota, horas, jogadas,
-   antes de começar, etapas do roteiro, DLCs) e bloco por conquista (apiname, dificuldade,
-   tempo, perdível, grind, DLC, etapa, vídeo + segundo, fotos com origem e crédito, fontes,
-   nome traduzido opcional).
+1. Formato documentado em `content/README.md`: `guide.yaml` com os dados neutros de idioma
+   (nota, horas, jogadas, etapas do roteiro, DLCs e, por conquista: apiname, dificuldade,
+   tempo, perdível, grind, DLC, etapa, vídeo + segundo, fotos com origem e crédito, fontes) e
+   `{pt-BR,en}.md` com o texto (antes de começar, passo a passo, nomes traduzidos opcionais).
 2. Leitura dos guias no build.
-3. Validação no CI: campos obrigatórios, apiname existente no schema, os dois idiomas presentes,
-   URLs de vídeo válidas.
-4. Um guia de exemplo pequeno usado nos testes.
+3. Snapshot do schema da Steam (`fixtures/steam/schema/{appid}.*.json`), gravado por
+   `pnpm steam:snapshot` e commitado junto com o guia.
+4. Validação no CI contra o snapshot: campos obrigatórios, apiname existente, os dois idiomas
+   presentes, URLs de vídeo válidas. Guia marcado `completo` falha se alguma conquista da
+   Steam ficar sem bloco.
+5. Um guia de exemplo pequeno, com a flag `exemplo: true`, usado nos testes e fora do site.
 
 ### Story 2.2: Página do jogo com guia
 
@@ -291,7 +331,8 @@ conquista, para planejar e executar a platina.
    segundo indicado, fotos com crédito e fontes (FR9, FR14).
 4. Ordem por dificuldade da curadoria com desempate pela % (FR10).
 5. Nome traduzido pela curadoria com o original da Steam ao lado (FR16).
-6. Botão "Sugerir correção" abrindo issue preenchida (FR15).
+6. Botão "Sugerir correção" abrindo issue preenchida (FR15), usando o formulário
+   `.github/ISSUE_TEMPLATE/correcao.yml` com os campos `jogo`, `conquista` e `idioma`.
 7. Página estática/ISR com metadados de SEO e `hreflang` (NFR8, NFR10).
 
 ### Story 2.3: Roteiro, filtros e DLC
@@ -310,6 +351,7 @@ Como visitante, quero ver na home os jogos que já têm guia, para descobrir o q
 1. Home com os jogos com guia em cartões (capa, nota, horas).
 2. Chamada "Entrar com a Steam" (desativada até o épico 3, ou oculta).
 3. Página "Sobre" com o propósito, as fontes e as licenças.
+4. Teste ponta a ponta do visitante: home → jogo com guia → revelar spoiler.
 
 ### Story 2.5: Guia do Hollow Knight
 
@@ -328,9 +370,12 @@ Permitir entrar com a Steam e usar o progresso real do usuário em todo o site.
 
 Como jogador, quero entrar com minha conta Steam, para o site saber o que eu já fiz.
 
-1. Botão "Entrar com a Steam" e fluxo OpenID 2.0 com verificação no servidor (FR17).
+1. Botão "Entrar com a Steam" e fluxo OpenID 2.0 com verificação no servidor (FR17):
+   `state` em cookie, conferência de `return_to`, `op_endpoint` e campos assinados, e
+   `check_authentication` sempre, sem exceção.
 2. Usuário criado ou atualizado com SteamID, nome e avatar; sessão em cookie assinado.
-3. Sair encerra a sessão; apagar a conta remove todos os dados do usuário (FR22).
+3. Sair encerra a sessão; apagar a conta remove todos os dados do usuário e invalida
+   qualquer sessão aberta (FR22).
 4. Preferência de spoiler passa a ser salva na conta (FR6).
 5. Página de privacidade descreve os dados guardados (NFR12).
 
@@ -339,6 +384,7 @@ Como jogador, quero entrar com minha conta Steam, para o site saber o que eu já
 Como jogador logado, quero ver na página do jogo o que já desbloqueei, para focar no que falta.
 
 1. Conquistas desbloqueadas marcadas e reveladas mesmo se ocultas; contador x/y (FR18, FR5).
+   O detalhe do jogo é buscado na primeira abertura depois do login (FR19), não no login.
 2. Barra "Base / Total" usa o progresso real nos jogos com DLC.
 3. Filtro "o que me falta" (FR12).
 4. Botão "Atualizar" com data da última atualização e limite de uma por jogo a cada 5 min (FR19, NFR3).
@@ -349,17 +395,23 @@ Como jogador com perfil privado, quero entender por que meu progresso não apare
 
 1. Detecção do perfil privado na resposta da Steam.
 2. Aviso com o passo a passo e capturas da tela de privacidade da Steam (FR20).
-3. Botão "Já mudei, atualizar" tenta de novo.
+3. Botão "Já mudei, atualizar" tenta de novo, no máximo uma vez por minuto (NFR3).
+4. Estado "Você não tem este jogo", separado do perfil privado (FR20).
 
 ### Story 3.4: Minha biblioteca
 
 Como jogador logado, quero ver todos os meus jogos ordenados por quão perto estou da
 platina, para escolher onde investir.
 
+0. Spike curto no início: confirmar que o `GetAchievementsProgress` (não documentado)
+   funciona; se não funcionar, seguir com o fallback por jogo.
 1. Página com os jogos do usuário que têm conquistas (`GetOwnedGames` + progresso).
-2. Ordenação por proximidade da platina (FR21) com o número de conquistas faltando e o selo "tem guia".
+2. Ordenação por proximidade da platina (FR21), com a fórmula da seção 11.3 da arquitetura,
+   o número de conquistas faltando e o selo "tem guia". Enquanto o detalhe não chega, a ordem
+   provisória usa só as contagens, e isso fica indicado na tela.
 3. Carregamento progressivo para bibliotecas grandes, respeitando o limite da API.
-4. Teste unitário do cálculo de proximidade.
+4. "Atualizar biblioteca" no máximo uma vez por hora (NFR3).
+5. Teste unitário do cálculo de proximidade.
 
 ## 9. Épico 4: Perfil público
 
@@ -377,7 +429,7 @@ Como visitante, quero ver o perfil público de alguém, para conhecer as platina
 
 1. `/[locale]/u/[apelido]` com avatar, apelido, platinas e jogos acima de 50%, cada um com a
    conquista mais rara desbloqueada (FR24).
-2. Perfil desligado ou inexistente responde 404.
+2. Perfil desligado ou inexistente responde o mesmo 404, sem diferença que revele qual é o caso.
 3. Metadados Open Graph para o link ficar bonito ao compartilhar.
 
 ## 10. Épico 5: Conteúdo do lançamento

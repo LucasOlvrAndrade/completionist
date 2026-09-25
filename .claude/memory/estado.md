@@ -50,4 +50,5 @@ da DLC paga (bloco proprio). Reserva: Witcher 3, Lies of P, RE4 Remake, Skyrim, 
 Excluidos: RDR2, GTA V (online), Valheim, Isaac, CS2/Dota/PUBG.
 Dados de "% com 100%" sao teto (conquista mais rara); fontes de 100% bloquearam a pesquisa.
 Resumo confirmado pelo Lucas. PRD escrito (docs/prd.md): 5 epicos, 18 stories + 13 de conteudo.
-Proximo: @ux-design-expert (front-end-spec) e @architect (fullstack-architecture).
+Front-end spec e arquitetura prontos; PRD 1.1 com as 13 mudancas do architect + lacunas do ux (caminhos traduzidos /en/game, faixas de raridade, regras de apelido, limites de refresh).
+Proximo: @po valida os artefatos (po-master-checklist).
