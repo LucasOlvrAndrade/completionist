@@ -36,3 +36,17 @@ Em aberto: nome/dominio, fotos de localizacao, repo no GitHub (ainda so local).
 - Spoilers: ocultas embacadas ate clicar, desbloqueadas reveladas, interruptor global lembrado por usuario.
 - Sem anuncios no MVP; "apoie o projeto" so se houver publico; Vercel Analytics sem cookies.
 - Stack: Next.js + Vercel + Neon, OpenID Steam feito a mao, cache diario da Steam via cron.
+
+### Lista de lancamento aprovada (2026-09-25)
+
+12: Elden Ring (1245620), Baldur's Gate 3 (1086940), Clair Obscur: Expedition 33 (1903340),
+Hades (1145360), Hades II (1145350), Stardew Valley (413150), Terraria (105600),
+Cyberpunk 2077 (1091500), Sekiro (814380), Black Myth: Wukong (2358720), Celeste (504230),
+Hogwarts Legacy (990080).
+Extras: Hollow Knight (367520) e Hollow Knight: Silksong (1030300).
+Primeiro guia sugerido: Hollow Knight (depois Silksong).
+Atencao: Terraria sem nomes PT-BR na Steam (curadoria traduz); Cyberpunk tem 13 conquistas
+da DLC paga (bloco proprio). Reserva: Witcher 3, Lies of P, RE4 Remake, Skyrim, Portal 2, Balatro.
+Excluidos: RDR2, GTA V (online), Valheim, Isaac, CS2/Dota/PUBG.
+Dados de "% com 100%" sao teto (conquista mais rara); fontes de 100% bloquearam a pesquisa.
+Proximo: Lucas confirmar o resumo do grill-me -> @pm escreve o PRD.
