@@ -54,3 +54,12 @@ Front-end spec e arquitetura prontos; PRD 1.1 com as 13 mudancas do architect + 
 @po: GO com ajustes (95%), 39 achados, 29 corrigidos (docs/po-validation.md). PRD 1.2.
 Decisoes do Lucas: D1 apelido fica reservado enquanto a conta existir; D2 faixa inclui o limite de baixo (aplicado); D3 Lighthouse so reporta ate o lancamento.
 Proximo: tarefas manuais do Lucas p/ Story 1.1 (tabela no PRD) + @sm cria stories do Epico 1.
+
+## 2026-09-25: Story 1.1 no ar
+
+- Pasta renomeada para `completionist`; repo publico LucasOlvrAndrade/completionist; CI verde.
+- Vercel: projeto lablcs/completionist, dominio https://completionist.lucas-andrade.dev, regiao iad1,
+  WAF api-rate-limit (429), Analytics ativo. Env: SESSION_SECRET, CRON_SECRET, NEXT_PUBLIC_SITE_URL.
+- ESLint ficou no 9 (o 10 quebra o eslint-plugin-react); desvio registrado na story 1.1.
+- Story 1.1: Ready for Review; falta so a 10.4 (teclado/contraste conferidos pelo Lucas no navegador).
+- Proximo: @qa na 1.1; depois 1.2 (precisa da chave da Steam Web API e da integracao Neon).
