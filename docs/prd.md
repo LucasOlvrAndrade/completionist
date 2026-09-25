@@ -102,7 +102,8 @@ e esse é o espaço inicial; o inglês amplia o alcance.
 - **FR24:** O perfil mostra avatar, apelido, platinas feitas e jogos com mais de 50% de
   progresso, cada um com o ícone da conquista mais rara desbloqueada.
 - **FR25:** O usuário pode trocar o apelido e desligar o perfil a qualquer momento; perfil
-  desligado responde 404.
+  desligado responde 404. O apelido continua reservado para a pessoa enquanto a conta
+  existir (religar volta o mesmo link) e só é liberado quando a conta é apagada.
 
 **Idiomas**
 
@@ -403,6 +404,8 @@ Como visitante, quero ver na home os jogos que já têm guia, para descobrir o q
 4. Teste ponta a ponta do visitante: home → jogo com guia → revelar spoiler, com o banco
    semeado por `pnpm db:seed:fixtures`, o guia de exemplo da Story 2.1 e verificação axe sem
    violações AA (NFR9).
+4b. Lighthouse no CI para a página do jogo com guia, só como relatório (não bloqueia o
+   merge) até o lançamento; depois passa a bloquear quando o LCP passar de 2,5 s (NFR8).
 5. Na busca (Story 1.4), jogos com guia aparecem primeiro, com o selo "Guia" (FR4).
 
 ### Story 2.5: Guia do Hollow Knight

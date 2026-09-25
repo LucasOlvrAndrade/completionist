@@ -52,5 +52,5 @@ Dados de "% com 100%" sao teto (conquista mais rara); fontes de 100% bloquearam 
 Resumo confirmado pelo Lucas. PRD escrito (docs/prd.md): 5 epicos, 15 stories + 13 de conteudo.
 Front-end spec e arquitetura prontos; PRD 1.1 com as 13 mudancas do architect + lacunas do ux (caminhos traduzidos /en/game, faixas de raridade, regras de apelido, limites de refresh).
 @po: GO com ajustes (95%), 39 achados, 29 corrigidos (docs/po-validation.md). PRD 1.2.
-Pendentes do Lucas: D1 apelido reservado ao desligar perfil, D2 limite inferior das faixas, D3 Lighthouse bloqueia ou so reporta.
+Decisoes do Lucas: D1 apelido fica reservado enquanto a conta existir; D2 faixa inclui o limite de baixo (aplicado); D3 Lighthouse so reporta ate o lancamento.
 Proximo: tarefas manuais do Lucas p/ Story 1.1 (tabela no PRD) + @sm cria stories do Epico 1.

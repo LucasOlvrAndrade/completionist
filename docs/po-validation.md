@@ -295,13 +295,13 @@ idiomas. **Aplicado.**
 
 Nenhuma bloqueia o início do Épico 1.
 
-- **D1. Apelido de perfil desligado:** continua reservado para a pessoa ou fica livre para
+- **D1. Apelido de perfil desligado:** continua reservado para a pessoa ou fica livre para **Decidido (25/09): continua reservado.**
   outro usuário? Proposta do @po: continua reservado enquanto a conta existir; só a troca de
   apelido ou apagar a conta libera.
 - **D2. Faixas de raridade no limite exato:** apliquei "cada faixa inclui o limite de baixo"
   (50% exato é Comum, 20% exato é Incomum). Muda só o caso de igualdade; confirme ou peça o
   contrário.
-- **D3. Lighthouse no CI:** bloqueia o merge quando o LCP passa de 2,5 s, ou só gera relatório?
+- **D3. Lighthouse no CI:** bloqueia o merge quando o LCP passa de 2,5 s, ou só gera relatório? **Decidido (25/09): so relatorio ate o lancamento.**
   Proposta: só relatório até o lançamento, bloqueante depois.
 
 ## 8. Arquivos alterados nesta validação
