@@ -49,4 +49,5 @@ Atencao: Terraria sem nomes PT-BR na Steam (curadoria traduz); Cyberpunk tem 13 
 da DLC paga (bloco proprio). Reserva: Witcher 3, Lies of P, RE4 Remake, Skyrim, Portal 2, Balatro.
 Excluidos: RDR2, GTA V (online), Valheim, Isaac, CS2/Dota/PUBG.
 Dados de "% com 100%" sao teto (conquista mais rara); fontes de 100% bloquearam a pesquisa.
-Proximo: Lucas confirmar o resumo do grill-me -> @pm escreve o PRD.
+Resumo confirmado pelo Lucas. PRD escrito (docs/prd.md): 5 epicos, 18 stories + 13 de conteudo.
+Proximo: @ux-design-expert (front-end-spec) e @architect (fullstack-architecture).

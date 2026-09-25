@@ -1,4 +1,4 @@
-# Project Brief: Platina (nome provisório)
+# Project Brief: Completionist (antes "Platina")
 
 Fase 1 do fluxo AIOX `greenfield-fullstack`, a cargo do @analyst. Data: 2026-09-25.
 
